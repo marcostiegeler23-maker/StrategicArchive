@@ -4,7 +4,7 @@
   "description": "Professional strategic contact management and analysis platform for relationship intelligence",
   "version": "1.0.0",
   "manifest_version": 3,
-  "start_url": "https://marcostiegeler23-maker.github.io/StrategicArchive/",
+  "start_url": "https://github.com/marcostiegeler23-maker/StrategicArchive.git",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#dc2626",
