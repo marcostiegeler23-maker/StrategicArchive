@@ -4,9 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Strategic Archive</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Meta Tags for PWA -->
+    <meta name="theme-color" content="#dc2626">
+    <meta name="background-color" content="#ffffff">
+    <meta name="display" content="standalone">
+    <meta name="orientation" content="portrait-primary">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="Logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Strategic Archive">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="Logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Logo.png">
+    <link rel="shortcut icon" href="Logo.png">
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#dc2626">
+    <meta name="msapplication-TileImage" content="Logo.png">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Professional strategic contact management and analysis platform for relationship intelligence">
+    <meta name="keywords" content="strategic, contacts, crm, intelligence, analysis, relationship management">
+    <meta name="author" content="Strategic Archive">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Strategic Archive">
+    <meta property="og:description" content="Professional strategic contact management and analysis platform">
+    <meta property="og:image" content="Logo.png">
+    <meta property="og:url" content="https://yourdomain.com">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Strategic Archive">
+    <meta name="twitter:description" content="Professional strategic contact management and analysis platform">
+    <meta name="twitter:image" content="Logo.png">
+    
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <link rel="manifest" href="/StrategicArchive/manifest.json">
+    
     <style>
         * {
             margin: 0;
@@ -910,9 +956,113 @@
             gap: 12px;
             justify-content: flex-end;
         }
+
+        /* PWA Install Prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1003;
+            display: none;
+        }
+
+        .install-prompt.show {
+            display: block;
+        }
+
+        .install-prompt-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .install-prompt-icon {
+            width: 40px;
+            height: 40px;
+            background: #dc2626;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .install-prompt-text {
+            flex: 1;
+        }
+
+        .install-prompt-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+        }
+
+        .install-prompt-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .install-prompt-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .install-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .dismiss-btn {
+            background: transparent;
+            color: #6b7280;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
+    <!-- PWA Install Prompt -->
+    <div class="install-prompt" id="installPrompt">
+        <div class="install-prompt-content">
+            <div class="install-prompt-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </div>
+            <div class="install-prompt-text">
+                <div class="install-prompt-title">Strategic Archive installieren</div>
+                <div class="install-prompt-subtitle">Für bessere Performance als App nutzen</div>
+            </div>
+            <div class="install-prompt-actions">
+                <button class="install-btn" id="installBtn">Installieren</button>
+                <button class="dismiss-btn" id="dismissBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Auth Screen -->
     <div class="auth-screen" id="authScreen">
         <div class="auth-container">
@@ -1211,12 +1361,84 @@
                 this.editingPersonId = null;
                 this.isAuthenticated = false;
                 this.userPassword = null;
+                this.deferredPrompt = null;
                 this.init();
             }
 
             init() {
                 this.checkAuthentication();
                 this.setupEventListeners();
+                this.setupPWA();
+            }
+
+            // PWA Setup
+            setupPWA() {
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('SW registered: ', registration);
+                        })
+                        .catch(registrationError => {
+                            console.log('SW registration failed: ', registrationError);
+                        });
+                }
+
+                // Handle install prompt
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    this.deferredPrompt = e;
+                    this.showInstallPrompt();
+                });
+
+                // Handle URL parameters for shortcuts
+                const urlParams = new URLSearchParams(window.location.search);
+                const action = urlParams.get('action');
+                
+                if (this.isAuthenticated) {
+                    switch (action) {
+                        case 'add':
+                            setTimeout(() => this.openAddPersonModal(), 500);
+                            break;
+                        case 'search':
+                            setTimeout(() => document.getElementById('searchInput').focus(), 500);
+                            break;
+                        case 'export':
+                            setTimeout(() => this.exportToPDF(), 500);
+                            break;
+                    }
+                }
+            }
+
+            showInstallPrompt() {
+                const installPrompt = document.getElementById('installPrompt');
+                const installBtn = document.getElementById('installBtn');
+                const dismissBtn = document.getElementById('dismissBtn');
+
+                // Don't show if already dismissed
+                if (localStorage.getItem('installPromptDismissed')) {
+                    return;
+                }
+
+                installPrompt.classList.add('show');
+
+                installBtn.addEventListener('click', () => {
+                    if (this.deferredPrompt) {
+                        this.deferredPrompt.prompt();
+                        this.deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                console.log('User accepted the install prompt');
+                            }
+                            this.deferredPrompt = null;
+                            installPrompt.classList.remove('show');
+                        });
+                    }
+                });
+
+                dismissBtn.addEventListener('click', () => {
+                    installPrompt.classList.remove('show');
+                    localStorage.setItem('installPromptDismissed', 'true');
+                });
             }
 
             // Authentication Methods
@@ -1268,6 +1490,11 @@
                     const hash = CryptoJS.SHA256(password).toString();
                     localStorage.setItem('strategic_archive_hash', hash);
                     this.userPassword = password;
+
+                    // Load default data for first time users
+                    this.people = this.getDefaultData();
+                    this.saveEncryptedData();
+
                     this.showMainApp();
                     return true;
                 } else {
@@ -1301,6 +1528,12 @@
                 document.getElementById('authScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
                 this.isAuthenticated = true;
+                
+                // Ensure data is loaded when showing main app
+                if (this.people.length === 0) {
+                    this.loadEncryptedData();
+                }
+                
                 this.renderLibrary();
                 this.updateStats();
             }
@@ -1309,8 +1542,21 @@
                 this.isAuthenticated = false;
                 this.userPassword = null;
                 this.people = [];
-                document.getElementById('authScreen').classList.remove('hidden');
-                document.getElementById('mainApp').classList.add('hidden');
+                
+                // Zeige Login-Bildschirm direkt an (nicht checkAuthentication)
+                const authScreen = document.getElementById('authScreen');
+                const mainApp = document.getElementById('mainApp');
+                const authSubtitle = document.getElementById('authSubtitle');
+                const authButton = document.getElementById('authButton');
+                const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+                
+                // Da bereits ein Passwort existiert, zeige Login-Modus
+                authSubtitle.textContent = 'Gib dein Passwort ein, um fortzufahren';
+                authButton.textContent = 'Anmelden';
+                confirmPasswordInput.style.display = 'none';
+                
+                authScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
                 
                 // Clear form
                 document.getElementById('passwordInput').value = '';
@@ -1349,10 +1595,10 @@
                 const encryptedData = localStorage.getItem('strategic_archive_data');
                 if (encryptedData) {
                     const decryptedData = this.decryptData(encryptedData);
-                    if (decryptedData) {
+                    if (decryptedData && decryptedData.length > 0) {
                         this.people = decryptedData;
                     } else {
-                        // If decryption fails, start with default data
+                        // If decryption fails or data is empty, start with default data
                         this.people = this.getDefaultData();
                         this.saveEncryptedData();
                     }
