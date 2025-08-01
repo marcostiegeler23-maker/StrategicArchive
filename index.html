@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Strategic Archive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            color: #1a1a1a;
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-feature-settings: "kern" 1, "liga" 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Auth Screen */
+        .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .auth-screen.hidden {
+            display: none;
+        }
+
+        .auth-container {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-logo svg {
+            width: 48px;
+            height: 48px;
+            color: #dc2626;
+            margin-bottom: 16px;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .auth-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-input {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 16px;
+            color: #1a1a1a;
+            transition: all 0.2s ease;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .auth-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .auth-button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .auth-button:hover {
+            background: #b91c1c;
+        }
+
+        .auth-button:active {
+            transform: translateY(1px);
+        }
+
+        .auth-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Header */
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            color: #dc2626;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-input {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px 10px 40px;
+            color: #1a1a1a;
+            width: 100%;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #dc2626;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: #9ca3af;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            min-height: 40px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #b91c1c;
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        .btn-secondary {
+            background: #f9fafb;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-ghost:hover {
+            background: #f9fafb;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 24px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #dc2626;
+            display: block;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* Controls Bar */
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 24px 0;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .sort-label {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sort-select {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #1a1a1a;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .sort-select:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 4px;
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .view-btn {
+            padding: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 32px;
+            min-width: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-btn.active {
+            background: #ffffff;
+            color: #dc2626;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Quick Filters */
+        .quick-filters {
+            display: flex;
+            gap: 8px;
+            margin: 24px 0;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .quick-filters::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-btn.active {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: white;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 100px;
+        }
+
+        .cards-grid.grid-view {
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        }
+
+        .person-card {
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .person-card:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .person-card.critical {
+            border-left: 4px solid #dc2626;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        .card-subtitle {
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .person-card:hover .card-actions {
+            opacity: 1;
+        }
+
+        .card-action-btn {
+            padding: 6px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 28px;
+            min-width: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-action-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .card-action-btn.edit {
+            color: #f59e0b;
+        }
+
+        .card-action-btn.delete {
+            color: #dc2626;
+        }
+
+        .relevance-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .relevance-critical {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .relevance-high {
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fed7aa;
+        }
+
+        .relevance-medium {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .relevance-low {
+            background: #f8fafc;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Key Metrics - Simplified */
+        .key-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 12px 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #f3f4f6;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        /* Strategic Info - Simplified */
+        .strategic-info {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .info-item {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid #e5e7eb;
+        }
+
+        .info-item.weakness { border-left-color: #dc2626; }
+        .info-item.leverage { border-left-color: #16a34a; }
+
+        .info-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            color: #6b7280;
+        }
+
+        .info-value {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #374151;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Modal - Simplified */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 40px 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .close-btn, .edit-btn, .delete-btn {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            min-height: 36px;
+            min-width: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-btn {
+            color: #f59e0b;
+        }
+
+        .delete-btn {
+            color: #dc2626;
+        }
+
+        .close-btn:hover, .edit-btn:hover, .delete-btn:hover {
+            background: #f3f4f6;
+        }
+
+        /* Form Styles - Simplified */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            color: #1a1a1a;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Range Slider - Simplified */
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .range-input {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .range-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #dc2626;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-input::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #dc2626;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .range-value {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            min-width: 36px;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid #fecaca;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: transparent;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+        }
+
+        .logout-btn:hover {
+            background: #f9fafb;
+            color: #dc2626;
+        }
+
+        /* Responsive */
+        @media (min-width: 768px) {
+            .container {
+                padding: 0 32px;
+            }
+
+            .strategic-info {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+
+            .form-group.full-width {
+                grid-column: 1 / -1;
+            }
+        }
+
+        /* Utility Classes */
+        .icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .hidden { display: none; }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 8px;
+            font-size: 18px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: #16a34a;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            z-index: 1001;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .notification.error {
+            background: #dc2626;
+        }
+
+        /* Confirmation Dialog */
+        .confirm-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            z-index: 1002;
+            max-width: 90vw;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .confirm-dialog h3 {
+            margin-bottom: 12px;
+            color: #1a1a1a;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .confirm-dialog p {
+            margin-bottom: 20px;
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-container">
+            <div class="auth-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <h1 class="auth-title">Strategic Archive</h1>
+                <p class="auth-subtitle" id="authSubtitle">Erstelle ein sicheres Passwort für dein Archiv</p>
+            </div>
+            <form class="auth-form" id="authForm">
+                <input type="password" class="auth-input" id="passwordInput" placeholder="Passwort eingeben" required>
+                <input type="password" class="auth-input" id="confirmPasswordInput" placeholder="Passwort bestätigen" style="display: none;">
+                <div class="auth-error hidden" id="authError"></div>
+                <button type="submit" class="auth-button" id="authButton">Passwort erstellen</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <h1 class="logo-text">Strategic Archive</h1>
+                    </div>
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" class="search-input" placeholder="Suchen..." id="searchInput">
+                        </div>
+                        <button class="btn btn-primary" id="addPersonBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"/>
+                                <path d="M12 5v14"/>
+                            </svg>
+                            Hinzufügen
+                        </button>
+                        <button class="logout-btn" id="logoutBtn" title="Abmelden">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16,17 21,12 16,7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalCount">0</span>
+                    <span class="stat-label">Gesamt</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="criticalCount">0</span>
+                    <span class="stat-label">Kritisch</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="highTrustCount">0</span>
+                    <span class="stat-label">Vertrauen</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="manipulableCount">0</span>
+                    <span class="stat-label">Manipulierbar</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="avgTrust">0</span>
+                    <span class="stat-label">⌀ Trust</span>
+                </div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="controls-bar">
+                <div class="sort-controls">
+                    <span class="sort-label">Sortieren:</span>
+                    <select class="sort-select" id="sortSelect">
+                        <option value="relevance">Relevanz</option>
+                        <option value="name">Name</option>
+                        <option value="lastContact">Kontakt</option>
+                        <option value="trustLevel">Vertrauen</option>
+                        <option value="manipulation">Manipulation</option>
+                        <option value="iq">IQ</option>
+                    </select>
+                </div>
+                <div class="view-controls">
+                    <button class="view-btn active" id="listViewBtn" title="Liste">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/>
+                            <line x1="3" y1="12" x2="3.01" y2="12"/>
+                            <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                    </button>
+                    <button class="view-btn" id="gridViewBtn" title="Raster">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-ghost" id="exportBtn" title="PDF Export">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Filters -->
+            <div class="quick-filters">
+                <button class="filter-btn active" data-filter="all">Alle</button>
+                <button class="filter-btn" data-filter="critical">🔥 Kritisch</button>
+                <button class="filter-btn" data-filter="dangerous">⚠️ Gefährlich</button>
+                <button class="filter-btn" data-filter="strategic">🎯 Strategisch</button>
+                <button class="filter-btn" data-filter="manipulable">🎭 Manipulierbar</button>
+                <button class="filter-btn" data-filter="high-trust">🛡️ Vertrauenswürdig</button>
+                <button class="filter-btn" data-filter="genius">🧠 Genius</button>
+            </div>
+
+            <!-- Cards Grid -->
+            <div class="cards-grid" id="cardsGrid">
+                <!-- Cards will be populated by JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Person Detail Modal -->
+    <div class="modal" id="personModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">
+                    <!-- Title will be populated by JavaScript -->
+                </div>
+                <div class="modal-actions">
+                    <button class="edit-btn" id="editPersonBtn" title="Bearbeiten">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button class="delete-btn" id="deletePersonBtn" title="Löschen">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            <line x1="10" y1="11" x2="10" y2="17"/>
+                            <line x1="14" y1="11" x2="14" y2="17"/>
+                        </svg>
+                    </button>
+                    <button class="close-btn" id="closeModalBtn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18"/>
+                            <path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="modalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Person Modal -->
+    <div class="modal" id="addPersonModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="addModalTitle">Neue Person hinzufügen</h2>
+                <div class="modal-actions">
+                    <button class="close-btn" id="closeAddModalBtn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18"/>
+                            <path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form id="addPersonForm">
+                <div class="form-grid">
+                    <!-- Basic Info -->
+                    <div class="form-group">
+                        <label class="form-label" for="personName">Name *</label>
+                        <input type="text" class="form-input" id="personName" name="personName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personRelevance">Relevanz</label>
+                        <select class="form-select" id="personRelevance" name="personRelevance">
+                            <option value="low">Niedrig</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">Hoch</option>
+                            <option value="critical">Kritisch</option>
+                        </select>
+                    </div>
+
+                    <!-- Key Metrics -->
+                    <div class="form-group">
+                        <label class="form-label" for="personIQ">🧠 IQ (70-200)</label>
+                        <div class="range-container">
+                            <input type="range" class="range-input" id="personIQ" name="personIQ" min="70" max="200" value="100">
+                            <span class="range-value" id="iqValue">100</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personEQ">💝 EQ (1-10)</label>
+                        <div class="range-container">
+                            <input type="range" class="range-input" id="personEQ" name="personEQ" min="1" max="10" value="5">
+                            <span class="range-value" id="eqValue">5</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personInfluence">⚡ Einfluss (1-10)</label>
+                        <div class="range-container">
+                            <input type="range" class="range-input" id="personInfluence" name="personInfluence" min="1" max="10" value="5">
+                            <span class="range-value" id="influenceValue">5</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personStressResistance">🛡️ Stressresistenz (1-10)</label>
+                        <div class="range-container">
+                            <input type="range" class="range-input" id="personStressResistance" name="personStressResistance" min="1" max="10" value="5">
+                            <span class="range-value" id="stressValue">5</span>
+                        </div>
+                    </div>
+
+                    <!-- Trust & Manipulation -->
+                    <div class="form-group">
+                        <label class="form-label" for="personTrustLevel">🛡️ Vertrauen (1-10)</label>
+                        <div class="range-container">
+                            <input type="range" class="range-input" id="personTrustLevel" name="personTrustLevel" min="1" max="10" value="5">
+                            <span class="range-value" id="trustValue">5</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="personManipulation">🎭 Manipulierbarkeit (1-10)</label>
+                        <div class="range-container">
+                            <input type="range" class="range-input" id="personManipulation" name="personManipulation" min="1" max="10" value="5">
+                            <span class="range-value" id="manipulationValue">5</span>
+                        </div>
+                    </div>
+
+                    <!-- Strategic Info -->
+                    <div class="form-group full-width">
+                        <label class="form-label" for="personWeakness">🎯 Schwachstelle</label>
+                        <textarea class="form-textarea" id="personWeakness" name="personWeakness" placeholder="Emotionale Trigger, Ängste, Unsicherheiten..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label" for="personLeverage">💎 Hebel / Druckmittel</label>
+                        <textarea class="form-textarea" id="personLeverage" name="personLeverage" placeholder="Was du hast, was sie will..."></textarea>
+                    </div>
+
+                    <!-- Additional Info -->
+                    <div class="form-group full-width">
+                        <label class="form-label" for="personKnowledgeAreas">📚 Wissensgebiete</label>
+                        <input type="text" class="form-input" id="personKnowledgeAreas" name="personKnowledgeAreas" placeholder="z.B. Medizin, Finanzen, Technologie">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label" for="personNotes">📝 Notizen</label>
+                        <textarea class="form-textarea" id="personNotes" name="personNotes" placeholder="Weitere strategische Informationen..."></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; font-size: 16px; padding: 14px;">
+                    <span id="submitBtnText">Person hinzufügen</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Strategic Contact Management System - Secure & Minimalist
+        class StrategicArchive {
+            constructor() {
+                this.people = [];
+                this.searchTerm = '';
+                this.activeFilter = 'all';
+                this.sortBy = 'relevance';
+                this.viewMode = 'list';
+                this.editingPersonId = null;
+                this.isAuthenticated = false;
+                this.userPassword = null;
+                this.init();
+            }
+
+            init() {
+                this.checkAuthentication();
+                this.setupEventListeners();
+            }
+
+            // Authentication Methods
+            checkAuthentication() {
+                const hasPassword = localStorage.getItem('strategic_archive_hash');
+                const authScreen = document.getElementById('authScreen');
+                const mainApp = document.getElementById('mainApp');
+                const authSubtitle = document.getElementById('authSubtitle');
+                const authButton = document.getElementById('authButton');
+                const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+
+                if (hasPassword) {
+                    // User has password, show login
+                    authSubtitle.textContent = 'Gib dein Passwort ein, um fortzufahren';
+                    authButton.textContent = 'Anmelden';
+                    confirmPasswordInput.style.display = 'none';
+                } else {
+                    // First time, show password creation
+                    authSubtitle.textContent = 'Erstelle ein sicheres Passwort für dein Archiv';
+                    authButton.textContent = 'Passwort erstellen';
+                    confirmPasswordInput.style.display = 'block';
+                }
+
+                authScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+            }
+
+            async authenticateUser(password, confirmPassword = null) {
+                const hasPassword = localStorage.getItem('strategic_archive_hash');
+                
+                if (!hasPassword) {
+                    // Creating new password
+                    if (!confirmPassword) {
+                        this.showAuthError('Bitte bestätige dein Passwort');
+                        return false;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        this.showAuthError('Passwörter stimmen nicht überein');
+                        return false;
+                    }
+                    
+                    if (password.length < 6) {
+                        this.showAuthError('Passwort muss mindestens 6 Zeichen lang sein');
+                        return false;
+                    }
+                    
+                    // Create password hash
+                    const hash = CryptoJS.SHA256(password).toString();
+                    localStorage.setItem('strategic_archive_hash', hash);
+                    this.userPassword = password;
+                    this.showMainApp();
+                    return true;
+                } else {
+                    // Verifying existing password
+                    const hash = CryptoJS.SHA256(password).toString();
+                    const storedHash = localStorage.getItem('strategic_archive_hash');
+                    
+                    if (hash === storedHash) {
+                        this.userPassword = password;
+                        this.loadEncryptedData();
+                        this.showMainApp();
+                        return true;
+                    } else {
+                        this.showAuthError('Falsches Passwort');
+                        return false;
+                    }
+                }
+            }
+
+            showAuthError(message) {
+                const errorDiv = document.getElementById('authError');
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    errorDiv.classList.add('hidden');
+                }, 3000);
+            }
+
+            showMainApp() {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                this.isAuthenticated = true;
+                this.renderLibrary();
+                this.updateStats();
+            }
+
+            logout() {
+                this.isAuthenticated = false;
+                this.userPassword = null;
+                this.people = [];
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+                
+                // Clear form
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('confirmPasswordInput').value = '';
+                
+                this.showNotification('Erfolgreich abgemeldet', 'success');
+            }
+
+            // Data Encryption Methods
+            encryptData(data) {
+                if (!this.userPassword) return null;
+                return CryptoJS.AES.encrypt(JSON.stringify(data), this.userPassword).toString();
+            }
+
+            decryptData(encryptedData) {
+                if (!this.userPassword || !encryptedData) return null;
+                try {
+                    const bytes = CryptoJS.AES.decrypt(encryptedData, this.userPassword);
+                    const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+                    return JSON.parse(decryptedData);
+                } catch (error) {
+                    console.error('Decryption failed:', error);
+                    return null;
+                }
+            }
+
+            saveEncryptedData() {
+                if (!this.isAuthenticated) return;
+                const encryptedData = this.encryptData(this.people);
+                if (encryptedData) {
+                    localStorage.setItem('strategic_archive_data', encryptedData);
+                }
+            }
+
+            loadEncryptedData() {
+                const encryptedData = localStorage.getItem('strategic_archive_data');
+                if (encryptedData) {
+                    const decryptedData = this.decryptData(encryptedData);
+                    if (decryptedData) {
+                        this.people = decryptedData;
+                    } else {
+                        // If decryption fails, start with default data
+                        this.people = this.getDefaultData();
+                        this.saveEncryptedData();
+                    }
+                } else {
+                    // No data exists, start with default
+                    this.people = this.getDefaultData();
+                    this.saveEncryptedData();
+                }
+            }
+
+            getDefaultData() {
+                return [{
+                    id: '1',
+                    name: 'Dr. Sarah Chen',
+                    relevance: 'high',
+                    iq: 145,
+                    eq: 7,
+                    influence: 6,
+                    stressResistance: 4,
+                    knowledgeAreas: 'Medizin, Chirurgie, Forschung',
+                    weakness: 'Perfektionismus, Angst vor öffentlichen Fehlern',
+                    leverage: 'Kenne ihre Vorgesetzten, habe Zugang zu Konferenzen',
+                    trustLevel: 8,
+                    manipulation: 6,
+                    notes: 'Sehr nützlich für medizinische Kontakte. Reagiert gut auf Schmeicheleien.',
+                    lastContact: '2024-01-15'
+                }];
+            }
+
+            setupEventListeners() {
+                // Auth form
+                document.getElementById('authForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const password = document.getElementById('passwordInput').value;
+                    const confirmPassword = document.getElementById('confirmPasswordInput').value;
+                    this.authenticateUser(password, confirmPassword);
+                });
+
+                // Logout
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    this.logout();
+                });
+
+                // Search
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.renderLibrary();
+                });
+
+                // Filters
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.activeFilter = e.target.dataset.filter;
+                        this.renderLibrary();
+                    });
+                });
+
+                // Sort
+                document.getElementById('sortSelect').addEventListener('change', (e) => {
+                    this.sortBy = e.target.value;
+                    this.renderLibrary();
+                });
+
+                // View controls
+                document.getElementById('listViewBtn').addEventListener('click', () => {
+                    this.setViewMode('list');
+                });
+
+                document.getElementById('gridViewBtn').addEventListener('click', () => {
+                    this.setViewMode('grid');
+                });
+
+                // Export
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    this.exportToPDF();
+                });
+
+                // Modals
+                document.getElementById('addPersonBtn').addEventListener('click', () => {
+                    this.openAddPersonModal();
+                });
+
+                document.getElementById('editPersonBtn').addEventListener('click', () => {
+                    this.openEditPersonModal();
+                });
+
+                document.getElementById('deletePersonBtn').addEventListener('click', () => {
+                    this.confirmDeletePerson();
+                });
+
+                document.getElementById('closeModalBtn').addEventListener('click', () => {
+                    this.closePersonModal();
+                });
+
+                document.getElementById('closeAddModalBtn').addEventListener('click', () => {
+                    this.closeAddPersonModal();
+                });
+
+                // Form submission
+                document.getElementById('addPersonForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (this.editingPersonId) {
+                        this.updatePerson();
+                    } else {
+                        this.addPerson();
+                    }
+                });
+
+                // Range inputs
+                this.setupRangeInputs();
+
+                // Close modals on outside click
+                document.getElementById('personModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'personModal') {
+                        this.closePersonModal();
+                    }
+                });
+
+                document.getElementById('addPersonModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'addPersonModal') {
+                        this.closeAddPersonModal();
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (!this.isAuthenticated) return;
+                    
+                    if (e.key === 'Escape') {
+                        this.closePersonModal();
+                        this.closeAddPersonModal();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        document.getElementById('searchInput').focus();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                        e.preventDefault();
+                        this.openAddPersonModal();
+                    }
+                });
+            }
+
+            setupRangeInputs() {
+                const ranges = [
+                    { input: 'personIQ', display: 'iqValue' },
+                    { input: 'personEQ', display: 'eqValue' },
+                    { input: 'personInfluence', display: 'influenceValue' },
+                    { input: 'personStressResistance', display: 'stressValue' },
+                    { input: 'personTrustLevel', display: 'trustValue' },
+                    { input: 'personManipulation', display: 'manipulationValue' }
+                ];
+
+                ranges.forEach(range => {
+                    const input = document.getElementById(range.input);
+                    const display = document.getElementById(range.display);
+                    if (input && display) {
+                        input.addEventListener('input', (e) => {
+                            display.textContent = e.target.value;
+                        });
+                    }
+                });
+            }
+
+            setViewMode(mode) {
+                this.viewMode = mode;
+                const grid = document.getElementById('cardsGrid');
+                const listBtn = document.getElementById('listViewBtn');
+                const gridBtn = document.getElementById('gridViewBtn');
+
+                if (mode === 'grid') {
+                    grid.classList.add('grid-view');
+                    listBtn.classList.remove('active');
+                    gridBtn.classList.add('active');
+                } else {
+                    grid.classList.remove('grid-view');
+                    listBtn.classList.add('active');
+                    gridBtn.classList.remove('active');
+                }
+            }
+
+            updateStats() {
+                const total = this.people.length;
+                const critical = this.people.filter(p => p.relevance === 'critical').length;
+                const highTrust = this.people.filter(p => p.trustLevel >= 8).length;
+                const manipulable = this.people.filter(p => p.manipulation >= 7).length;
+                const avgTrust = total > 0 ? Math.round(this.people.reduce((sum, p) => sum + p.trustLevel, 0) / total * 10) / 10 : 0;
+
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('criticalCount').textContent = critical;
+                document.getElementById('highTrustCount').textContent = highTrust;
+                document.getElementById('manipulableCount').textContent = manipulable;
+                document.getElementById('avgTrust').textContent = avgTrust;
+            }
+
+            getFilteredAndSortedPeople() {
+                let filtered = this.people;
+
+                // Apply search filter
+                if (this.searchTerm) {
+                    filtered = filtered.filter(person => 
+                        person.name.toLowerCase().includes(this.searchTerm) ||
+                        (person.weakness && person.weakness.toLowerCase().includes(this.searchTerm)) ||
+                        (person.leverage && person.leverage.toLowerCase().includes(this.searchTerm)) ||
+                        (person.knowledgeAreas && person.knowledgeAreas.toLowerCase().includes(this.searchTerm)) ||
+                        (person.notes && person.notes.toLowerCase().includes(this.searchTerm))
+                    );
+                }
+
+                // Apply category filter
+                if (this.activeFilter !== 'all') {
+                    filtered = filtered.filter(person => {
+                        switch (this.activeFilter) {
+                            case 'critical':
+                                return person.relevance === 'critical';
+                            case 'dangerous':
+                                return person.trustLevel <= 3;
+                            case 'strategic':
+                                return person.relevance === 'high' || (person.leverage && person.leverage.length > 20);
+                            case 'manipulable':
+                                return person.manipulation >= 7;
+                            case 'high-trust':
+                                return person.trustLevel >= 8;
+                            case 'genius':
+                                return person.iq >= 140;
+                            default:
+                                return true;
+                        }
+                    });
+                }
+
+                // Apply sorting
+                filtered.sort((a, b) => {
+                    switch (this.sortBy) {
+                        case 'name':
+                            return a.name.localeCompare(b.name);
+                        case 'relevance':
+                            const relevanceOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                            return relevanceOrder[b.relevance] - relevanceOrder[a.relevance];
+                        case 'trustLevel':
+                            return b.trustLevel - a.trustLevel;
+                        case 'manipulation':
+                            return b.manipulation - a.manipulation;
+                        case 'iq':
+                            return (b.iq || 100) - (a.iq || 100);
+                        case 'lastContact':
+                            return new Date(b.lastContact || '2000-01-01') - new Date(a.lastContact || '2000-01-01');
+                        default:
+                            return 0;
+                    }
+                });
+
+                return filtered;
+            }
+
+            renderLibrary() {
+                if (!this.isAuthenticated) return;
+                
+                const grid = document.getElementById('cardsGrid');
+                const filteredPeople = this.getFilteredAndSortedPeople();
+
+                if (filteredPeople.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <h3>Keine Personen gefunden</h3>
+                            <p>Versuche einen anderen Suchbegriff oder Filter</p>
+                            ${this.people.length === 0 ? `
+                                <button class="btn btn-primary" onclick="window.strategicArchive.openAddPersonModal()">
+                                    Erste Person hinzufügen
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = filteredPeople.map(person => this.createPersonCard(person)).join('');
+
+                // Add click listeners to cards
+                grid.querySelectorAll('.person-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        if (e.target.closest('.card-action-btn')) return;
+                        
+                        const personId = card.dataset.personId;
+                        const person = this.people.find(p => p.id === personId);
+                        this.openPersonModal(person);
+                    });
+                });
+
+                // Add action button listeners
+                grid.querySelectorAll('.card-action-btn.edit').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const personId = btn.closest('.person-card').dataset.personId;
+                        const person = this.people.find(p => p.id === personId);
+                        this.currentPerson = person;
+                        this.openEditPersonModal();
+                    });
+                });
+
+                grid.querySelectorAll('.card-action-btn.delete').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const personId = btn.closest('.person-card').dataset.personId;
+                        const person = this.people.find(p => p.id === personId);
+                        this.currentPerson = person;
+                        this.confirmDeletePerson();
+                    });
+                });
+            }
+
+            createPersonCard(person) {
+                const relevanceClass = `relevance-${person.relevance}`;
+                const relevanceText = {
+                    critical: 'Kritisch',
+                    high: 'Hoch',
+                    medium: 'Medium',
+                    low: 'Niedrig'
+                }[person.relevance];
+
+                const cardClass = person.relevance === 'critical' ? 'person-card critical' : 'person-card';
+
+                return `
+                    <div class="${cardClass}" data-person-id="${person.id}">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">${person.name}</div>
+                                <div class="card-subtitle">${person.knowledgeAreas || 'Keine Expertise angegeben'}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="card-actions">
+                                    <button class="card-action-btn edit" title="Bearbeiten">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                    </button>
+                                    <button class="card-action-btn delete" title="Löschen">
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3,6 5,6 21,6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="relevance-badge ${relevanceClass}">${relevanceText}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Key Metrics -->
+                        <div class="key-metrics">
+                            <div class="metric-item">
+                                <div class="metric-label">IQ</div>
+                                <div class="metric-value">${person.iq || 100}</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">EQ</div>
+                                <div class="metric-value">${person.eq || 5}</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Einfluss</div>
+                                <div class="metric-value">${person.influence || 5}</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Stress</div>
+                                <div class="metric-value">${person.stressResistance || 5}</div>
+                            </div>
+                        </div>
+
+                        <div class="strategic-info">
+                            <div class="info-item weakness">
+                                <div class="info-label">🎯 Schwachstelle</div>
+                                <div class="info-value">${person.weakness || 'Nicht erfasst'}</div>
+                            </div>
+                            <div class="info-item leverage">
+                                <div class="info-label">💎 Hebel</div>
+                                <div class="info-value">${person.leverage || 'Nicht erfasst'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            openPersonModal(person) {
+                const modal = document.getElementById('personModal');
+                const title = document.getElementById('modalTitle');
+                const content = document.getElementById('modalContent');
+
+                this.currentPerson = person;
+
+                const relevanceClass = `relevance-${person.relevance}`;
+                const relevanceText = {
+                    critical: 'Kritisch',
+                    high: 'Hoch',
+                    medium: 'Medium',
+                    low: 'Niedrig'
+                }[person.relevance];
+
+                title.innerHTML = `
+                    <span>${person.name}</span>
+                    <div class="relevance-badge ${relevanceClass}">${relevanceText}</div>
+                `;
+
+                content.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                            <h3 style="margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #1a1a1a;">🧠 Intelligenz & Fähigkeiten</h3>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                                <div><strong>IQ:</strong> ${person.iq || 100}</div>
+                                <div><strong>EQ:</strong> ${person.eq || 5}/10</div>
+                                <div><strong>Einfluss:</strong> ${person.influence || 5}/10</div>
+                                <div><strong>Stressresistenz:</strong> ${person.stressResistance || 5}/10</div>
+                            </div>
+                            <div><strong>Wissensgebiete:</strong><br>${person.knowledgeAreas || 'Nicht erfasst'}</div>
+                        </div>
+
+                        <div style="background: #fef2f2; padding: 20px; border-radius: 12px; border: 1px solid #fecaca;">
+                            <h3 style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #dc2626;">🎯 Schwachstelle</h3>
+                            <p style="color: #374151; line-height: 1.5;">${person.weakness || 'Nicht erfasst'}</p>
+                        </div>
+
+                        <div style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1px solid #bbf7d0;">
+                            <h3 style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #16a34a;">💎 Hebel / Druckmittel</h3>
+                            <p style="color: #374151; line-height: 1.5;">${person.leverage || 'Nicht erfasst'}</p>
+                        </div>
+
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                            <h3 style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1a1a1a;">📊 Strategische Bewertung</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div><strong>Vertrauen:</strong> ${person.trustLevel}/10</div>
+                                <div><strong>Manipulierbarkeit:</strong> ${person.manipulation}/10</div>
+                            </div>
+                        </div>
+
+                        ${person.notes ? `
+                            <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <h3 style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #1a1a1a;">📝 Notizen</h3>
+                                <p style="color: #374151; line-height: 1.5;">${person.notes}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            closePersonModal() {
+                document.getElementById('personModal').classList.remove('active');
+                document.body.style.overflow = '';
+                this.currentPerson = null;
+            }
+
+            openAddPersonModal() {
+                this.editingPersonId = null;
+                document.getElementById('addModalTitle').textContent = 'Neue Person hinzufügen';
+                document.getElementById('submitBtnText').textContent = 'Person hinzufügen';
+                document.getElementById('addPersonModal').classList.add('active');
+                document.getElementById('addPersonForm').reset();
+                
+                // Reset range values
+                document.getElementById('iqValue').textContent = '100';
+                document.getElementById('eqValue').textContent = '5';
+                document.getElementById('influenceValue').textContent = '5';
+                document.getElementById('stressValue').textContent = '5';
+                document.getElementById('trustValue').textContent = '5';
+                document.getElementById('manipulationValue').textContent = '5';
+                
+                document.body.style.overflow = 'hidden';
+            }
+
+            openEditPersonModal() {
+                if (!this.currentPerson) return;
+                
+                this.editingPersonId = this.currentPerson.id;
+                document.getElementById('addModalTitle').textContent = 'Person bearbeiten';
+                document.getElementById('submitBtnText').textContent = 'Änderungen speichern';
+                
+                const person = this.currentPerson;
+                document.getElementById('personName').value = person.name || '';
+                document.getElementById('personRelevance').value = person.relevance || 'medium';
+                document.getElementById('personIQ').value = person.iq || 100;
+                document.getElementById('personEQ').value = person.eq || 5;
+                document.getElementById('personInfluence').value = person.influence || 5;
+                document.getElementById('personStressResistance').value = person.stressResistance || 5;
+                document.getElementById('personTrustLevel').value = person.trustLevel || 5;
+                document.getElementById('personManipulation').value = person.manipulation || 5;
+                document.getElementById('personKnowledgeAreas').value = person.knowledgeAreas || '';
+                document.getElementById('personWeakness').value = person.weakness || '';
+                document.getElementById('personLeverage').value = person.leverage || '';
+                document.getElementById('personNotes').value = person.notes || '';
+                
+                // Update range displays
+                document.getElementById('iqValue').textContent = person.iq || 100;
+                document.getElementById('eqValue').textContent = person.eq || 5;
+                document.getElementById('influenceValue').textContent = person.influence || 5;
+                document.getElementById('stressValue').textContent = person.stressResistance || 5;
+                document.getElementById('trustValue').textContent = person.trustLevel || 5;
+                document.getElementById('manipulationValue').textContent = person.manipulation || 5;
+                
+                this.closePersonModal();
+                document.getElementById('addPersonModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeAddPersonModal() {
+                document.getElementById('addPersonModal').classList.remove('active');
+                document.body.style.overflow = '';
+                this.editingPersonId = null;
+            }
+
+            addPerson() {
+                const formData = this.getFormData();
+                
+                const person = {
+                    id: Date.now().toString(),
+                    ...formData,
+                    lastContact: new Date().toISOString().split('T')[0]
+                };
+
+                this.people.push(person);
+                this.saveEncryptedData();
+                this.renderLibrary();
+                this.updateStats();
+                this.closeAddPersonModal();
+
+                this.showNotification('Person erfolgreich hinzugefügt!', 'success');
+            }
+
+            updatePerson() {
+                const formData = this.getFormData();
+                
+                const personIndex = this.people.findIndex(p => p.id === this.editingPersonId);
+                if (personIndex === -1) return;
+
+                const updatedPerson = {
+                    ...this.people[personIndex],
+                    ...formData,
+                    lastContact: new Date().toISOString().split('T')[0]
+                };
+
+                this.people[personIndex] = updatedPerson;
+                this.saveEncryptedData();
+                this.renderLibrary();
+                this.updateStats();
+                this.closeAddPersonModal();
+
+                this.showNotification('Person erfolgreich aktualisiert!', 'success');
+            }
+
+            getFormData() {
+                return {
+                    name: document.getElementById('personName').value || '',
+                    relevance: document.getElementById('personRelevance').value || 'medium',
+                    iq: parseInt(document.getElementById('personIQ').value) || 100,
+                    eq: parseInt(document.getElementById('personEQ').value) || 5,
+                    influence: parseInt(document.getElementById('personInfluence').value) || 5,
+                    stressResistance: parseInt(document.getElementById('personStressResistance').value) || 5,
+                    trustLevel: parseInt(document.getElementById('personTrustLevel').value) || 5,
+                    manipulation: parseInt(document.getElementById('personManipulation').value) || 5,
+                    knowledgeAreas: document.getElementById('personKnowledgeAreas').value || '',
+                    weakness: document.getElementById('personWeakness').value || '',
+                    leverage: document.getElementById('personLeverage').value || '',
+                    notes: document.getElementById('personNotes').value || ''
+                };
+            }
+
+            confirmDeletePerson() {
+                if (!this.currentPerson) return;
+
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.5);
+                    z-index: 1001;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+
+                const dialog = document.createElement('div');
+                dialog.className = 'confirm-dialog';
+                dialog.innerHTML = `
+                    <h3>Person löschen</h3>
+                    <p>Möchtest du <strong>${this.currentPerson.name}</strong> wirklich aus dem Archiv löschen? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                    <div class="confirm-actions">
+                        <button class="btn btn-secondary" id="cancelDelete">Abbrechen</button>
+                        <button class="btn btn-primary" id="confirmDelete" style="background: #dc2626;">Löschen</button>
+                    </div>
+                `;
+
+                overlay.appendChild(dialog);
+                document.body.appendChild(overlay);
+
+                document.getElementById('cancelDelete').addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                });
+
+                document.getElementById('confirmDelete').addEventListener('click', () => {
+                    this.deletePerson();
+                    document.body.removeChild(overlay);
+                });
+
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        document.body.removeChild(overlay);
+                    }
+                });
+            }
+
+            deletePerson() {
+                if (!this.currentPerson) return;
+
+                const personIndex = this.people.findIndex(p => p.id === this.currentPerson.id);
+                if (personIndex === -1) return;
+
+                const personName = this.currentPerson.name;
+                this.people.splice(personIndex, 1);
+                this.saveEncryptedData();
+                this.renderLibrary();
+                this.updateStats();
+                this.closePersonModal();
+
+                this.showNotification(`${personName} wurde aus dem Archiv gelöscht.`, 'success');
+            }
+
+            exportToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Title
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text('Strategic Archive', 20, 25);
+                
+                // Subtitle
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Exportiert am: ${new Date().toLocaleDateString('de-DE')}`, 20, 35);
+                doc.text(`Anzahl Personen: ${this.people.length}`, 20, 42);
+                
+                let yPosition = 60;
+                
+                this.people.forEach((person, index) => {
+                    if (yPosition > 240) {
+                        doc.addPage();
+                        yPosition = 25;
+                    }
+                    
+                    doc.setFontSize(14);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${index + 1}. ${person.name}`, 20, yPosition);
+                    yPosition += 8;
+                    
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`Relevanz: ${person.relevance} | IQ: ${person.iq || 100} | EQ: ${person.eq || 5} | Vertrauen: ${person.trustLevel}/10`, 20, yPosition);
+                    yPosition += 6;
+                    
+                    if (person.weakness) {
+                        doc.setFont(undefined, 'bold');
+                        doc.text('Schwachstelle:', 20, yPosition);
+                        doc.setFont(undefined, 'normal');
+                        yPosition += 4;
+                        const weaknessLines = doc.splitTextToSize(person.weakness, 170);
+                        doc.text(weaknessLines, 20, yPosition);
+                        yPosition += weaknessLines.length * 4 + 3;
+                    }
+                    
+                    if (person.leverage) {
+                        doc.setFont(undefined, 'bold');
+                        doc.text('Hebel:', 20, yPosition);
+                        doc.setFont(undefined, 'normal');
+                        yPosition += 4;
+                        const leverageLines = doc.splitTextToSize(person.leverage, 170);
+                        doc.text(leverageLines, 20, yPosition);
+                        yPosition += leverageLines.length * 4 + 3;
+                    }
+                    
+                    yPosition += 8;
+                });
+                
+                doc.save(`strategic-archive-${new Date().toISOString().split('T')[0]}.pdf`);
+                this.showNotification('PDF erfolgreich exportiert!', 'success');
+            }
+
+            showNotification(message, type = 'info') {
+                const existingNotifications = document.querySelectorAll('.notification');
+                existingNotifications.forEach(n => n.remove());
+
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 3000);
+            }
+        }
+
+        // Initialize the Strategic Archive
+        document.addEventListener('DOMContentLoaded', () => {
+            window.strategicArchive = new StrategicArchive();
+        });
+    </script>
+</body>
+</html>
